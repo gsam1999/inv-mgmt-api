@@ -19,6 +19,7 @@ var transactions = [];
 itemRouter.use(bodyParser.json());
 
 itemRouter.route('/')
+    .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200) })
     .get(cors.cors, (req, res, next) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -33,6 +34,7 @@ itemRouter.route('/')
     })
 
 itemRouter.route('/:itemid')
+    .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200) })
     .get(cors.cors, (req, res, next) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -78,6 +80,7 @@ const transactionRouter = express.Router({ mergeParams: true });
 itemRouter.use('/:itemid/transactions', transactionRouter);
 
 transactionRouter.route('/')
+    .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200) })
     .get(cors.cors, (req, res, next) => {
         let item = items.find(ele => ele._id == req.params.itemid);
         if (item) {
