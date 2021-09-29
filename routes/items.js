@@ -19,12 +19,12 @@ var transactions = [];
 itemRouter.use(bodyParser.json());
 
 itemRouter.route('/')
-    .get(cors.corsWithOptions, (req, res, next) => {
+    .get((req, res, next) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.send(items);
     })
-    .post(cors.corsWithOptions, (req, res, next) => {
+    .post((req, res, next) => {
         req.body._id = new Date().getTime();
         items.push(req.body)
         res.statusCode = 200;
@@ -33,12 +33,12 @@ itemRouter.route('/')
     })
 
 itemRouter.route('/:itemid')
-    .get(cors.corsWithOptions, (req, res, next) => {
+    .get((req, res, next) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.send(items.find(ele => ele._id == req.params.itemid));
     })
-    .post(cors.corsWithOptions, (req, res, next) => {
+    .post((req, res, next) => {
         let item = items.find(ele => ele._id == req.params.itemid);
         if (item) {
             items[items.indexOf(item)] = req.body
@@ -54,7 +54,7 @@ itemRouter.route('/:itemid')
     })
 
 itemRouter.route('/:itemid/UpdateQuantity')
-    .post(cors.corsWithOptions, (req, res, next) => {
+    .post((req, res, next) => {
         let item = items.find(ele => ele._id == req.body._id);
         if (item) {
             if (req.body.action == 'add')
@@ -78,7 +78,7 @@ const transactionRouter = express.Router({ mergeParams: true });
 itemRouter.use('/:itemid/transactions', transactionRouter);
 
 transactionRouter.route('/')
-    .get(cors.corsWithOptions, (req, res, next) => {
+    .get((req, res, next) => {
         let item = items.find(ele => ele._id == req.params.itemid);
         if (item) {
             res.setHeader('Content-Type', 'application/json');
