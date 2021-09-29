@@ -8,6 +8,13 @@ var itemRouter = require('./routes/items');
 
 var app = express();
 
+const cors = require('cors');
+
+app.use(cors({
+  origin: '*'
+}));
+
+
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
