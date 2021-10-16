@@ -1,8 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('../cors')
 
 const itemRouter = express.Router();
+const auth = require('../middleware/authorize');
 
 // let item = class {
 //     id
@@ -11,6 +11,7 @@ const itemRouter = express.Router();
 //     measurement;
 //     image;
 //     quantity;
+//      notes;        
 // };
 
 var items = [];
@@ -19,7 +20,7 @@ var transactions = [];
 itemRouter.use(bodyParser.json());
 
 itemRouter.route('/')
-    .get((req, res, next) => {
+    .get(auth, (req, res, next) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.send(items);
@@ -36,7 +37,9 @@ itemRouter.route('/:itemid')
     .get((req, res, next) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
-        res.send(items.find(ele => ele._id == req.params.itemid));
+        let item = items.find(ele => ele._id == req.params.itemid);
+        item.transactions = transactions.filter(ele => ele._id = req.params.itemid);
+        res.send(item);
     })
     .post((req, res, next) => {
         let item = items.find(ele => ele._id == req.params.itemid);
@@ -57,32 +60,16 @@ itemRouter.route('/:itemid/UpdateQuantity')
     .post((req, res, next) => {
         let item = items.find(ele => ele._id == req.body._id);
         if (item) {
-            if (req.body.action == 'add')
+            if (req.body.action == 'Add')
                 item.quantity += Number(req.body.quantity);
             else
                 item.quantity -= Number(req.body.quantity);
-            transactions.push({ itemid: req.body._id, data: req.body })
+
+            transactions.push(req.body)
+            item.transactions = transactions.filter(ele => ele._id = item._id);
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.send(item);
-        }
-        else {
-            err = new Error("item cannot be found");
-            err.statusCode = 404;
-            return next(err);
-        }
-    })
-
-const transactionRouter = express.Router({ mergeParams: true });
-
-itemRouter.use('/:itemid/transactions', transactionRouter);
-
-transactionRouter.route('/')
-    .get((req, res, next) => {
-        let item = items.find(ele => ele._id == req.params.itemid);
-        if (item) {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(transactions.filter(ele => ele.itemid = req.params.itemid));
         }
         else {
             err = new Error("item cannot be found");

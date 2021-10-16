@@ -5,9 +5,19 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 var itemRouter = require('./routes/items');
+var userRouter = require('./routes/users');
 
 var app = express();
 
+
+const mongoose = require('mongoose');
+
+mongoose.connect("mongodb://localhost:27017/demo", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+  .then(() => console.log("Connected to DB"))
+  .catch(console.error);
 
 app.all('*', (req, res, next) => {
   if (req.secure) {
@@ -29,6 +39,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+
+app.use('/user', userRouter);
 app.use('/items', itemRouter);
 
 // catch 404 and forward to error handler
