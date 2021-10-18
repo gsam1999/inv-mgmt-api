@@ -1,81 +1,145 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 
+const { Items } = require('../models/itemModel');
+const { Branch } = require('../models/itemModel');
+const { Category } = require('../models/itemModel');
+const { Transaction } = require('../models/itemModel');
+
 const itemRouter = express.Router();
 const auth = require('../middleware/authorize');
-
-// let item = class {
-//     id
-//     name;
-//     type;
-//     measurement;
-//     image;
-//     quantity;
-//      notes;        
-// };
-
-var items = [];
-var transactions = [];
 
 itemRouter.use(bodyParser.json());
 
 itemRouter.route('/')
-    .get(auth, (req, res, next) => {
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.send(items);
+    .get((req, res, next) => {
+        Items.find({})
+            .populate('category')
+            .populate('branch')
+            .then((items) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.send(items);
+            })
     })
     .post((req, res, next) => {
-        req.body._id = new Date().getTime();
-        items.push(req.body)
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.send(req.body);
+        let items = req.body.items;
+        Items.insertMany(items).then((item) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.send(item);
+        })
+    })
+
+itemRouter.route('/category')
+    .get((req, res, next) => {
+        Category.find({}).then((items) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.send(items);
+        })
+    })
+    .post((req, res, next) => {
+        Category.create({ name: req.body.name }).then((items) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.send(items);
+        })
+    })
+    .delete((req, res, next) => {
+        Category.deleteMany({ name: req.body.name }).then((items) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.send(items);
+        })
+    })
+
+itemRouter.route('/branch')
+    .get((req, res, next) => {
+        Branch.find({}).then((items) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.send(items);
+        })
+    })
+    .post((req, res, next) => {
+        Branch.create({ name: req.body.name }).then((items) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.send(items);
+        })
+    })
+    .delete((req, res, next) => {
+        Branch.deleteMany({ name: req.body.name }).then((items) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.send(items);
+        })
+    })
+
+itemRouter.route('/Transactions')
+    .get((req, res, next) => {
+
+        let validFilters = ['createdAt'];
+        let filters = req.query.filters;
+
+        Transaction.find({})
+            .sort({ createdAt: req.query.order })
+            .skip(Number(req.query.size * req.query.page))
+            .limit(Number(req.query.size))
+            .populate({ path: 'item', populate: { path: 'category branch' } })
+            .then(async (transactions) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.send({ count: await Transaction.count({}), transactions: transactions });
+            })
+    })
+    .post((req, res, next) => {
+        Transaction.create(req.body).then(async (transaction) => {
+            let item = await Items.findById(transaction.item).populate('category branch');
+            if (transaction.action == 'Add')
+                item.quantity += Number(transaction.quantity);
+            else if (transaction.action == 'Remove' && item.quantity >= transaction.quantity)
+                item.quantity -= Number(transaction.quantity);
+            item.save().then((item) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.send(item);
+            })
+        }).catch((err) => {
+            err = new Error("item cannot be found");
+            err.statusCode = 404;
+            return next(err);
+        })
     })
 
 itemRouter.route('/:itemid')
     .get((req, res, next) => {
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        let item = items.find(ele => ele._id == req.params.itemid);
-        item.transactions = transactions.filter(ele => ele._id = req.params.itemid);
-        res.send(item);
+        Items.findById(req.params.itemid)
+            .populate('category')
+            .populate('branch')
+            .then((item) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.send(item);
+            })
     })
-    .post((req, res, next) => {
-        let item = items.find(ele => ele._id == req.params.itemid);
-        if (item) {
-            items[items.indexOf(item)] = req.body
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.send(req.body);
-        }
-        else {
-            err = new Error("item cannot be found");
-            err.statusCode = 404;
-            return next(err);
-        }
-    })
-
-itemRouter.route('/:itemid/UpdateQuantity')
-    .post((req, res, next) => {
-        let item = items.find(ele => ele._id == req.body._id);
-        if (item) {
-            if (req.body.action == 'Add')
-                item.quantity += Number(req.body.quantity);
-            else
-                item.quantity -= Number(req.body.quantity);
-
-            transactions.push(req.body)
-            item.transactions = transactions.filter(ele => ele._id = item._id);
+    .put((req, res, next) => {
+        let item = req.body.item;
+        Items.findByIdAndUpdate(item).then((item) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.send(item);
-        }
-        else {
-            err = new Error("item cannot be found");
-            err.statusCode = 404;
-            return next(err);
-        }
+        })
     })
+    .delete((req, res, next) => {
+        Items.findByIdAndDelete(req.params.itemid).then((item) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.send(item);
+        })
+    })
+
+
 
 module.exports = itemRouter;

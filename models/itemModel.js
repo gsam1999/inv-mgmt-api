@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-
 const categorySchema = new Schema({
     name: {
         type: String,
@@ -11,9 +10,14 @@ const categorySchema = new Schema({
     timestamps: true
 });
 
-var Category = mongoose.model('Category', categorySchema);
-
-module.exports = Category;
+const branchSchema = new Schema({
+    name: {
+        type: String,
+        required: true,
+    }
+}, {
+    timestamps: true
+});
 
 const itemSchema = new Schema({
     name: {
@@ -24,9 +28,14 @@ const itemSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category'
     },
+    branch: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Branch'
+    },
     imageLink: {
         type: String,
-        required: true
+        required: true,
+        maxLength: 200
     },
     units: {
         type: String,
@@ -44,35 +53,17 @@ const itemSchema = new Schema({
     },
     notes: {
         type: String,
-        required: true
-    },
-    transactions: [{
-        Type: mongoose.Schema.Types.ObjectId,
-        ref: 'Transaction'
-    }]
+        required: true,
+        maxLength: 500
+    }
 }, {
     timestamps: true
 });
 
-var Item = mongoose.model('Item', itemSchema);
-
-module.exports = Item;
-
-
 const transactionSchema = new Schema({
     item: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Item',
-        required: true
-    },
-    category: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category',
-        required: true
-    },
-    category: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Branch',
+        ref: 'Items',
         required: true
     },
     action: {
@@ -88,7 +79,11 @@ const transactionSchema = new Schema({
     timestamps: true
 });
 
-var Transaction = mongoose.model('Transaction', transactionSchema);
 
-module.exports = Transaction;
+module.exports = {
+    Items: mongoose.model('Items', itemSchema),
+    Branch: mongoose.model('Branch', branchSchema),
+    Category: mongoose.model('Category', categorySchema),
+    Transaction: mongoose.model('Transaction', transactionSchema)
+};
 
