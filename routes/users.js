@@ -7,17 +7,17 @@ var config = require('../config');
 
 const { Branch } = require('../models/itemModel');
 
-async function verifyAdmin() {
+async function addAdmin() {
   let branches = await Branch.find();
   if (!await User.exists({ username: 'admin', role: 'admin' })) {
-    const user = new User({ username: 'admin', password: 'admin', role: 'admin', branches: branches.map(ele => ele._id) });
+    const user = new User({ username: 'admin', password: 'admin', role: 'admin', branches: branches.map(ele => ele._id), active: true });
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(user.password, salt);
     user.save();
   }
 }
 
-verifyAdmin();
+addAdmin();
 
 async function getHashedPassword(password) {
   const salt = await bcrypt.genSalt(10);
@@ -28,12 +28,13 @@ async function getHashedPassword(password) {
 async function getUserObject(body) {
 
   let validBranches = await Branch.find({});
-  let userDetails = { username: body.username }
+  let userDetails = { username: body.username.toLowerCase() }
 
   if (body.password || body.role || (Array.isArray(body.branches) && body.branches.length != 0)) {
     body.password && (userDetails.password = await getHashedPassword(body.password));
     userDetails.role = body.role;
     userDetails.branches = body.branches.filter(ele => validBranches.find(br => br._id == ele));
+    userDetails.active = body.active;
     return userDetails;
   }
   else
@@ -57,12 +58,12 @@ userRouter.route('/register')
   .post(async (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
 
-    if (await User.exists({ username: body.username }))
+    if (await User.exists({ username: req.body.username }))
       res.status(401).json({ error: "Username alread exists" });
 
-    let userDetails = getUserObject(req.body);
+    let userDetails = await getUserObject(req.body);
     if (userDetails) {
-      const user = new User();
+      const user = new User(userDetails);
       user.save().then((doc) => res.status(201).send(doc));
     }
     else {
@@ -92,7 +93,7 @@ userRouter.route('/login')
     if (user) {
       const validPassword = await bcrypt.compare(body.password, user.password);
       if (validPassword) {
-        const token = jwt.sign({ user_id: user._id }, config.TOKEN_KEY, { expiresIn: "48h" });
+        const token = jwt.sign({ user_id: user._id, role: user.role }, config.TOKEN_KEY, { expiresIn: "48h" });
         res.status(200).json({ username: user.username, role: user.role, branches: user.branches, token: token });
       } else {
         res.status(400).json({ error: "Invalid Password" });

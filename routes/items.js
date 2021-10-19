@@ -5,6 +5,7 @@ const { Items } = require('../models/itemModel');
 const { Branch } = require('../models/itemModel');
 const { Category } = require('../models/itemModel');
 const { Transaction } = require('../models/itemModel');
+const User = require('../models/userModel');
 
 const itemRouter = express.Router();
 const auth = require('../middleware/authorize');
@@ -32,26 +33,24 @@ itemRouter.route('/')
     })
 
 itemRouter.route('/category')
-    .get((req, res, next) => {
+    .get(async (req, res, next) => {
         Category.find({}).then((items) => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.send(items);
         })
     })
-    .post((req, res, next) => {
-        Category.create({ name: req.body.name }).then((items) => {
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.send(items);
-        })
-    })
-    .delete((req, res, next) => {
-        Category.deleteMany({ name: req.body.name }).then((items) => {
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.send(items);
-        })
+    .post(async (req, res, next) => {
+        if (req.body._id)
+            Category.findByIdAndUpdate(req.body._id, { name: req.body.name, active: req.body.active }).then(async () => {
+                let items = await Category.find({});
+                res.send(items)
+            })
+        else
+            Category.create({ name: req.body.name, active: true }).then(async () => {
+                let items = await Category.find({});
+                res.send(items)
+            })
     })
 
 itemRouter.route('/branch')
@@ -62,19 +61,18 @@ itemRouter.route('/branch')
             res.send(items);
         })
     })
-    .post((req, res, next) => {
-        Branch.create({ name: req.body.name }).then((items) => {
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.send(items);
-        })
-    })
-    .delete((req, res, next) => {
-        Branch.deleteMany({ name: req.body.name }).then((items) => {
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.send(items);
-        })
+    .post(async (req, res, next) => {
+        if (req.body._id)
+            Branch.findByIdAndUpdate(req.body._id, { name: req.body.name, active: req.body.active }).then(async () => {
+                let items = await Branch.find({});
+                await User.findOneAndUpdate({ name: 'admin' }, { branches: items.map(ele => ele._id) });
+                res.send(items)
+            })
+        else
+            Branch.create({ name: req.body.name, active: true }).then(async () => {
+                let items = await Branch.find({});
+                res.send(items)
+            })
     })
 
 itemRouter.route('/Transactions')
@@ -88,20 +86,28 @@ itemRouter.route('/Transactions')
             .skip(Number(req.query.size * req.query.page))
             .limit(Number(req.query.size))
             .populate({ path: 'item', populate: { path: 'category branch' } })
+            .populate('user', 'username')
             .then(async (transactions) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
                 res.send({ count: await Transaction.count({}), transactions: transactions });
             })
     })
-    .post((req, res, next) => {
+    .post(auth, (req, res, next) => {
+        req.body.user = req.user;
         Transaction.create(req.body).then(async (transaction) => {
-            let item = await Items.findById(transaction.item).populate('category branch');
+            let item = await Items.findById(transaction.item);
+
+            transaction.before = item.quantity;
+
             if (transaction.action == 'Add')
                 item.quantity += Number(transaction.quantity);
             else if (transaction.action == 'Remove' && item.quantity >= transaction.quantity)
                 item.quantity -= Number(transaction.quantity);
-            item.save().then((item) => {
+            transaction.after = item.quantity;
+
+            item.save().then(async (item) => {
+                await transaction.save()
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
                 res.send(item);

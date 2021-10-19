@@ -5,7 +5,9 @@ const categorySchema = new Schema({
     name: {
         type: String,
         required: true,
-    }
+        unique: true
+    },
+    active: { type: Boolean, required: true }
 }, {
     timestamps: true
 });
@@ -14,7 +16,9 @@ const branchSchema = new Schema({
     name: {
         type: String,
         required: true,
-    }
+        unique: true
+    },
+    active: { type: Boolean, required: true }
 }, {
     timestamps: true
 });
@@ -70,10 +74,23 @@ const transactionSchema = new Schema({
         type: String,
         required: true,
     },
+    before: {
+        type: Number,
+        min: 0
+    },
     quantity: {
         type: Number,
         required: true,
+        min: 1
+    },
+    after: {
+        type: Number,
         min: 0
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
     }
 }, {
     timestamps: true

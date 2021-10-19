@@ -9,6 +9,7 @@ const UserSchema = new mongoose.Schema({
         ref: 'Branch',
         required: true
     }],
+    active: { type: Boolean, required: true }
 }, { timestamps: true })
 
 module.exports = mongoose.model('User', UserSchema)

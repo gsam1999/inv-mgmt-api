@@ -12,7 +12,9 @@ var app = express();
 
 const mongoose = require('mongoose');
 
-mongoose.connect("mongodb://localhost:27017/demo", {
+const uri = "mongodb+srv://admin:admin@cluster0.vtf4u.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
+
+mongoose.connect(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
@@ -29,6 +31,7 @@ app.all('*', (req, res, next) => {
 })
 
 const cors = require('cors');
+const { userInfo } = require('os');
 
 app.use(cors());
 
