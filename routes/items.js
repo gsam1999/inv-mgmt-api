@@ -79,9 +79,13 @@ itemRouter.route('/Transactions')
     .get((req, res, next) => {
 
         let validFilters = ['createdAt'];
-        let filters = req.query.filters;
+        let filters = JSON.parse(req.query.filters);
+        let query = {}
 
-        Transaction.find({})
+        if (filters.items)
+            query.item = filters.items.map(ele => ele._id);
+
+        Transaction.find(query)
             .sort({ createdAt: req.query.order })
             .skip(Number(req.query.size * req.query.page))
             .limit(Number(req.query.size))
@@ -90,7 +94,7 @@ itemRouter.route('/Transactions')
             .then(async (transactions) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
-                res.send({ count: await Transaction.count({}), transactions: transactions });
+                res.send({ count: await Transaction.count(query), transactions: transactions });
             })
     })
     .post(auth, (req, res, next) => {
