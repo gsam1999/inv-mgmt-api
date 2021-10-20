@@ -6,6 +6,7 @@ var logger = require('morgan');
 
 var itemRouter = require('./routes/items');
 var userRouter = require('./routes/users');
+var router = express.Router();
 
 var app = express();
 
@@ -43,6 +44,12 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 
+router.get('/', function (req, res, next) {
+  res.sendFile(path.join(__dirname, '/index.html'));
+});
+
+
+app.use('/', router)
 app.use('/users', userRouter);
 app.use('/items', itemRouter);
 
