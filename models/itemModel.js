@@ -38,8 +38,7 @@ const itemSchema = new Schema({
     },
     imageLink: {
         type: String,
-        required: true,
-        maxLength: 200
+        maxLength: 250
     },
     units: {
         type: String,
@@ -57,7 +56,6 @@ const itemSchema = new Schema({
     },
     notes: {
         type: String,
-        required: true,
         maxLength: 500
     }
 }, {
@@ -91,6 +89,9 @@ const transactionSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true
+    },
+    comments: {
+        type: String
     }
 }, {
     timestamps: true

@@ -30,6 +30,9 @@ itemRouter.route('/')
             res.setHeader('Content-Type', 'application/json');
             res.send(item);
         })
+            .catch(err => {
+                next(err)
+            })
     })
 
 itemRouter.route('/category')

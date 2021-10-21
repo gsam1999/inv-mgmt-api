@@ -1,18 +1,13 @@
 var createError = require('http-errors');
 var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 var itemRouter = require('./routes/items');
 var userRouter = require('./routes/users');
-var router = express.Router();
 
 var app = express();
 
-
 const mongoose = require('mongoose');
-
 const uri = "mongodb+srv://admin:admin@cluster0.vtf4u.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
 
 mongoose.connect(uri, {
@@ -32,24 +27,21 @@ app.all('*', (req, res, next) => {
 })
 
 const cors = require('cors');
-const { userInfo } = require('os');
-
 app.use(cors());
 
 
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+// app.use(express.static(path.join(__dirname, 'public')));
 
 
-router.get('/', function (req, res, next) {
-  res.sendFile(path.join(__dirname, '/index.html'));
-});
+// router.get('/', function (req, res, next) {
+//   res.sendFile(path.join(__dirname, '/index.html'));
+// });
 
 
-app.use('/', router)
+// app.use('/', router)
 app.use('/users', userRouter);
 app.use('/items', itemRouter);
 
