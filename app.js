@@ -17,14 +17,14 @@ mongoose.connect(uri, {
   .then(() => console.log("Connected to DB"))
   .catch(console.error);
 
-app.all('*', (req, res, next) => {
-  if (req.secure) {
-    return next()
-  }
-  else {
-    res.redirect(307, 'https://' + req.hostname + ':' + app.get('secPort') + req.url)
-  }
-})
+// app.all('*', (req, res, next) => {
+//   if (req.secure) {
+//     return next()
+//   }
+//   else {
+//     res.redirect(307, 'https://' + req.hostname + ':' + app.get('secPort') + req.url)
+//   }
+// })
 
 const cors = require('cors');
 app.use(cors());
