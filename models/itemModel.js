@@ -9,7 +9,7 @@ const categorySchema = new Schema({
     },
     active: { type: Boolean, required: true }
 }, {
-    timestamps: true
+    timestamps: { updatedAt: 'updatedAt' }
 });
 
 const branchSchema = new Schema({
@@ -20,7 +20,7 @@ const branchSchema = new Schema({
     },
     active: { type: Boolean, required: true }
 }, {
-    timestamps: true
+    timestamps: { updatedAt: 'updatedAt' }
 });
 
 const itemSchema = new Schema({
@@ -91,10 +91,19 @@ const transactionSchema = new Schema({
         required: true
     },
     comments: {
-        type: String
+        type: String,
+        maxLength: 500
+    },
+    expiryDate: {
+        type: Date,
+        validate: {
+            validator: function (v) {
+                return !v || (v.getTime() > Date.now());
+            }
+        }
     }
 }, {
-    timestamps: true
+    timestamps: { createdAt: 'createdAt' }
 });
 
 

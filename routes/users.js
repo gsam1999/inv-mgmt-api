@@ -6,6 +6,8 @@ var jwt = require('jsonwebtoken');
 var config = require('../config');
 
 const { Branch } = require('../models/itemModel');
+const verifyUser = require('../middleware/authorize');
+const verifyAdmin = require('../middleware/admin');
 
 async function addAdmin() {
   let branches = await Branch.find();
@@ -43,7 +45,7 @@ async function getUserObject(body) {
 
 
 userRouter.route('/')
-  .get((req, res, next) => {
+  .get(verifyUser, verifyAdmin, (req, res, next) => {
     User.find({})
       .populate('branches')
       .select('-password')
@@ -55,7 +57,7 @@ userRouter.route('/')
   })
 
 userRouter.route('/register')
-  .post(async (req, res, next) => {
+  .post(verifyUser, verifyAdmin, async (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
 
     if (await User.exists({ username: req.body.username }))
@@ -70,7 +72,7 @@ userRouter.route('/register')
       res.status(401).json({ error: "Invalid Details" });
     }
   })
-  .put(async (req, res, next) => {
+  .put(verifyUser, verifyAdmin, async (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     let body = req.body;
 
@@ -89,7 +91,7 @@ userRouter.route('/register')
 userRouter.route('/login')
   .post(async (req, res, next) => {
     const body = req.body;
-    const user = await User.findOne({ username: body.username });
+    const user = await User.findOne({ username: body.username, active: true });
     if (user) {
       const validPassword = await bcrypt.compare(body.password, user.password);
       if (validPassword) {
