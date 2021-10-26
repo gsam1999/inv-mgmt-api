@@ -165,17 +165,19 @@ itemRouter.route('/Transactions')
             let branch = filters.branches || '';
             let category = filters.category || '';
             let action = filters.action || '';
-
+            let expire = filters.expire || false;
 
             Transaction.aggregate([
                 {
                     $match: {
-                        $expr: {
-                            $or: [
-                                { $eq: [action, ''] },
-                                { $eq: ['$action', action] }
-                            ]
-                        }
+                        $and: [
+                            {
+                                $expr: { $or: [{ $eq: [action, ''] }, { $eq: ['$action', action] }] }
+                            },
+                            {
+                                $or: [{ $expr: { $eq: [expire, false] } }, { expiryDate: { $exists: expire } }]
+                            }
+                        ]
                     }
                 },
                 {
@@ -240,6 +242,7 @@ itemRouter.route('/Transactions')
                                     "branch": { $first: "$branch" },
                                     "category": { $first: "$category" },
                                     "units": 1,
+                                    "imageLink": 1
                                 }
                             }
                         ],
@@ -277,14 +280,14 @@ itemRouter.route('/Transactions')
                         "createdAt": 1,
                         "quantity": 1,
                         "after": 1,
-                        "expiryDate": { $ifNull: ["$expiryDate", "-1"] }
+                        "expiryDate": 1
                     }
                 },
                 {
                     $unwind: { path: "$item", preserveNullAndEmptyArrays: false },
                 },
                 {
-                    $sort: { sort: req.query.order == "asc" ? 1 : -1 }
+                    $sort: { [sort]: (req.query.order == "asc" ? 1 : -1) }
                 },
                 {
                     $facet: {
@@ -297,6 +300,7 @@ itemRouter.route('/Transactions')
                 res.setHeader('Content-Type', 'application/json');
                 res.send({ count: data[0].length[0] ? data[0].length[0].total : 0, transactions: data[0].data });
             })
+            //  .catch(err => next(err))
         }
     })
     .post(verifyUser, (req, res, next) => {
