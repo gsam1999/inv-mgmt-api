@@ -29,7 +29,7 @@ A default user with will be created once the server is started with db connected
 
 username: admin , password: admin , the password can be updated later.
 
-
+Note: if the client application uses https, the server must also be deployed on https (https://stackoverflow.com/questions/11744975/enabling-https-on-express-js).
 
 
 
