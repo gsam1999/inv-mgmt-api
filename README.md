@@ -20,6 +20,17 @@ npm start
 ```
 This starts the server on http://localhost:3000 by default, if all the dependencies are installed properly.
 
+Install MongoDB locally on machine using https://docs.mongodb.com/manual/installation 
+or utilize a cloud based service MongoDB atlas which provides a free tier (https://www.knowi.com/blog/getting-started-with-mongodb-atlas-overview-and-tutorial/).
+
+Once the database is set up and is running, update the config.js file to point to the proper database instance and the database name.
+
+A default user with will be created once the server is started with db connected, with the credentials
+
+username: admin , password: admin , the password can be updated later.
+
+
+
 
 
 
