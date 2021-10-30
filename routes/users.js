@@ -4,6 +4,8 @@ const bcrypt = require("bcrypt");
 const User = require("../models/userModel");
 var jwt = require('jsonwebtoken');
 var config = require('../config');
+var mongoose = require('mongoose')
+
 
 const { Branch } = require('../models/itemModel');
 const verifyUser = require('../middleware/authorize');
@@ -46,13 +48,14 @@ async function getUserObject(body) {
 
 userRouter.route('/')
   .get(verifyUser, verifyAdmin, (req, res, next) => {
-    User.find({})
+    User.find()
       .populate('branches')
       .select('-password')
       .then((users) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
-        res.send(users);
+        let validUsers = users.filter(user => user.branches.filter(branch => req.branches.includes(branch._id.toString())).length > 0)
+        res.send(validUsers);
       })
   })
 
@@ -95,7 +98,7 @@ userRouter.route('/login')
     if (user) {
       const validPassword = await bcrypt.compare(body.password, user.password);
       if (validPassword) {
-        const token = jwt.sign({ user_id: user._id, role: user.role }, config.TOKEN_KEY, { expiresIn: "48h" });
+        const token = jwt.sign({ user_id: user._id, role: user.role, branches: user.branches }, config.TOKEN_KEY, { expiresIn: "48h" });
         res.status(200).json({ username: user.username, role: user.role, branches: user.branches, token: token });
       } else {
         res.status(400).json({ error: "Invalid Password" });

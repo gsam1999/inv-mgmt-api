@@ -4,11 +4,12 @@ var logger = require('morgan');
 
 var itemRouter = require('./routes/items');
 var userRouter = require('./routes/users');
+const config = require('./config')
 
 var app = express();
 
 const mongoose = require('mongoose');
-const uri = "mongodb+srv://admin:admin@cluster0.vtf4u.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
+const uri = config.mongoUrl;
 
 mongoose.connect(uri, {
   useNewUrlParser: true,
@@ -17,14 +18,6 @@ mongoose.connect(uri, {
   .then(() => console.log("Connected to DB"))
   .catch(console.error);
 
-// app.all('*', (req, res, next) => {
-//   if (req.secure) {
-//     return next()
-//   }
-//   else {
-//     res.redirect(307, 'https://' + req.hostname + ':' + app.get('secPort') + req.url)
-//   }
-// })
 
 const cors = require('cors');
 app.use(cors());
@@ -33,15 +26,8 @@ app.use(cors());
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-// app.use(express.static(path.join(__dirname, 'public')));
 
 
-// router.get('/', function (req, res, next) {
-//   res.sendFile(path.join(__dirname, '/index.html'));
-// });
-
-
-// app.use('/', router)
 app.use('/users', userRouter);
 app.use('/items', itemRouter);
 

@@ -15,7 +15,7 @@ itemRouter.use(bodyParser.json());
 
 itemRouter.route('/')
     .get(verifyUser, (req, res, next) => {
-        Items.find({})
+        Items.find({ branch: { "$in": req.branches } })
             .populate('category')
             .populate('branch')
             .then((items) => {
@@ -38,10 +38,11 @@ itemRouter.route('/')
 
 itemRouter.route('/category')
     .get(verifyUser, async (req, res, next) => {
-        Category.find({})
+        Category.find()
             .then((items) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
+                req.role != 'admin' && (items = items.filter(ele => ele.active))
                 res.send(items);
             })
             .catch(err => next(err))
@@ -70,7 +71,7 @@ itemRouter.route('/branch')
             .then((data) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
-                res.send(data.branches);
+                res.send(data.role != 'admin' ? data.branches.filter(branch => branch.active) : data.branches);
             })
             .catch(err => next(err))
     })
@@ -79,7 +80,6 @@ itemRouter.route('/branch')
             Branch.findByIdAndUpdate(req.body._id, { name: req.body.name, active: req.body.active })
                 .then(async () => {
                     let items = await Branch.find({});
-                    await User.findOneAndUpdate({ name: 'admin' }, { branches: items.map(ele => ele._id) });
                     res.send(items)
                 })
                 .catch(err => next(err))
@@ -87,13 +87,13 @@ itemRouter.route('/branch')
             Branch.create({ name: req.body.name, active: true })
                 .then(async () => {
                     let items = await Branch.find({});
+                    await User.findOneAndUpdate({ name: 'admin' }, { branches: items.map(ele => ele._id) });
                     res.send(items)
                 })
                 .catch(err => next(err))
     })
 
 
-name = "rice"
 
 // Transaction.aggregate([
 //     {
@@ -144,7 +144,7 @@ itemRouter.route('/Transactions')
         let query = {};
         sort = req.query.sort;
 
-        if (Object.keys(filters).length == 0 || ((Object.keys(filters).length == 1) && filters.item)) {
+        if ((Object.keys(filters).length == 1) && filters.item) {
             filters.item && (query.item = filters.item);
             Transaction.find(query)
                 .sort([[sort, req.query.order]])
@@ -162,10 +162,11 @@ itemRouter.route('/Transactions')
         else {
             filters.name && (query.name = {});
             let name = filters.name || ''
-            let branch = filters.branches || '';
+            let branch = filters.branches ? filters.branches.filter(ele => req.branches.indexOf(ele) > -1) : req.branches;
             let category = filters.category || '';
             let action = filters.action || '';
             let expire = filters.expire || false;
+            let minDate = filters.minDate ? new Date(filters.minDate) : new Date(0);
 
             Transaction.aggregate([
                 {
@@ -176,7 +177,11 @@ itemRouter.route('/Transactions')
                             },
                             {
                                 $or: [{ $expr: { $eq: [expire, false] } }, { expiryDate: { $exists: expire } }]
+                            },
+                            {
+                                $or: [{ expiryDate: { $exists: false } }, { expiryDate: { $gte: minDate } }]
                             }
+
                         ]
                     }
                 },
@@ -197,10 +202,9 @@ itemRouter.route('/Transactions')
                                                 ]
                                             },
                                             {
-                                                $or: [
-                                                    { $eq: [branch, ''] },
-                                                    { $in: ['$branch', { $map: { input: branch, in: { "$toObjectId": "$$this" } } }] }
-                                                ]
+
+                                                $in: ['$branch', { $map: { input: branch, in: { "$toObjectId": "$$this" } } }]
+
                                             },
                                             {
                                                 $or: [
@@ -306,7 +310,7 @@ itemRouter.route('/Transactions')
     .post(verifyUser, (req, res, next) => {
         req.body.user = req.user;
         Transaction.create(req.body).then(async (transaction) => {
-            let item = await Items.findById(transaction.item);
+            let item = await Items.findById(transaction.item).populate('category branch');
 
             transaction.before = item.quantity;
 
