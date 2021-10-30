@@ -31,7 +31,7 @@ username: admin , password: admin , the password can be updated later.
 
 Note: if the client application uses https, the server must also be deployed on https (https://stackoverflow.com/questions/11744975/enabling-https-on-express-js).
 
-
+Also update the TOKEN_KEY present in config.js file to a valid key  to avoid security issues.
 
 
 
